@@ -39,4 +39,38 @@ The num of threads executing the kernel is specified as part of the execution co
 
 2 ways to launch kernels:
 1. **triple chevron notation**
-2. `cudaLaunchKernel`
+2. `cudaLaunchKernelEx`, which will be talked later.
+
+##### 2.1.2.2.1 Triple Chevron Notation
+
+Now there are some concrete grammars and definitions, referred to the source of guide. Here list some keywords: 
+`dim3`: CUDA type for description of grid and block
+
+`<<dim3 grid, dim3 block>>`
+
+`threadIdx` gives the index of a thread within its thread block. Each thread in a thread block will have a different index.
+
+`blockDim` gives the dimensions of the thread block, which was specified in the execution configuration of the kernel launch.
+
+`blockIdx` gives the index of a thread block within the grid. Each thread block will have a different index.
+
+`gridDim` gives the dimensions of the grid, which was specified in the execution configuration when the kernel was launched.
+
+`cuda::ceil_div` does the ceiling divide to calculate the number of blocks needed for a kernel launch.
+```
+int blocks = cuda::ceil_div(vectorLength, threads);
+```
+
+### 2.1.3. Memory in GPU Computing
+A, B, C in `vecadd` should be accessible for threads. The ways are various. Here are 2, more in the [Unified Memory]().
+
+#### 2.1.3.1 Unified Memory
+Usage: Memory is allocated using the cudaMallocManaged API or by declaring a variable with the `__managed__` specifier. 
+Function: the allocated memory is accessible to the GPU or CPU whenever either tries to access it.
+Unified memory can be released using cudaFree.
+
+!!! quote
+
+    On some Linux systems, (e.g. those with address translation services or heterogeneous memory management) all system memory is automatically unified memory, and there is no need to use cudaMallocManaged or the __managed__ specifier.
+
+__syncthreads()

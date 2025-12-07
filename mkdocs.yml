@@ -36,6 +36,7 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.arithmatex:
       generic: true
 extra_javascript:
