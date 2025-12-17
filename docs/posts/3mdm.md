@@ -127,6 +127,7 @@ T_{mem} = \frac{RQ_{mem} \times 4\text{Bytes}}{BW(global)}
 $$
 where $T_{sm}$ is the SM instruction transmission cycle, and $BW_g$ is the global memory bandwidth.
 translate to the formula using $CQ(\times), RQ_{global},N$: 
+
  - Fused & Vectorized: $T_{total} = (\frac{2}{CQ(\times)} + \frac{4}{BW(global)})~N$
  - Vectorized: $T_{total} = 2 \times (\frac{1}{CQ(\times)} + \frac{3}{BW(global)})~N$
  - Fused: $T_{total} = (\frac{2}{CQ(\times)} + \frac{16}{BW(global)}) ~N$
@@ -139,6 +140,7 @@ $N$: matrix size, $N\times N$
 ![图片alt](speedup.png "图片title")
 
 $N < 1600$: 
+
 Q: 为什么Fused的优化低于1.5？
 A: cuda-extension存在launch开销
 
@@ -146,6 +148,7 @@ Q: 为什么Vectorization没有优化效果？
 A: 内存带宽没有打满
 
 $ 1600 < N < 2200$:
+
 Q: 为什么性能有急剧提升？
 A: L2 Cache cover了所有的数据，$2200 \times 2200 \times 4 \times 4B \approx 72MB $
 
