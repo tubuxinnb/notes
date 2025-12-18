@@ -6,13 +6,26 @@ categories:
 ---
 
 # 3 Matrix Hadamard Product
-Dot product is element-wise: 
-$A \cdot B = C$
-where $C_{i,j} = A_{i,j} \cdot B_{i,j}$
+Hadamard Product is element-wise: 
+$$
+A \cdot B = C
+$$
+where, 
+$$
+C_{i,j} = A_{i,j} \cdot B_{i,j}
+$$
+
+<!-- more -->
 because every element in $A$ and $B$ is only calculated once. the Arithmetic Intensity (AI) is a constant.
-FLOPS = $N^2$
-Bytes = $2 \times N^2 \times 3$ (read A, B, write C)
-$\text{AI} = \text{FLOPS} / \text{Bytes} = \frac{1}{6}$
+$$
+FLOPS = N^2
+$$
+$$
+Bytes = 2 \times N^2 \times 3~~(read~A, B, write~C)
+$$ 
+$$
+\text{AI} = \text{FLOPS} / \text{Bytes} = \frac{1}{6}
+$$
 The Arithmetic Intensity is a fixed constant.
 So our goal is to improve the memory throughput of the dot product.
 We choose 2 ways to improve the memory throughput:
@@ -71,6 +84,7 @@ Comparison between different kernels: at Thread/Block Level:
 计算方式：都是乘法
 计算次数：fused kernel 2次，base kernel 1次；vectorize kernel 4次，base kernel 1次
 计算开销：
+
 - Fused & Vectorized: $T_{compute} = 8~T_{\times}$
 - Vectorized: $T_{compute} = 4~T_{\times}$
 - Fused: $T_{compute} = 2~T_{\times}$
@@ -94,16 +108,23 @@ Comparison between different kernels: at Thread/Block Level:
 | base | 2 | $N/256$ | $N$ | $N$ | $3N$ |
 | Pytorch | 2 | Unknown | Unknown | Unknown | Unknown |
 
-**关于计算**：~~同一kernel中的thread的计算是并行的，不存在数据依赖，我们考虑单个kernel启动的thread和block数量。参考上表，vectorization的kernel的block和对应的thread的数量减少到原来的1/4。如果GPU的SM能够并行执行这些blocks，那么速度应该不会受到影响，否则可能会有warp的排队延迟**。但单就这一层来说，减少block的数量总是好的。~~
+**关于计算**：
+
+  ~~
+  同一kernel中的thread的计算是并行的，不存在数据依赖，我们考虑单个kernel启动的thread和block数量。参考上表，vectorization的kernel的block和对应的thread的数量减少到原来的1/4。如果GPU的SM能够并行执行这些blocks，那么速度应该不会受到影响，否则可能会有warp的排队延迟。但单就这一层来说，减少block的数量总是好的。
+  ~~
+
 在GPU中计算延迟(Computing latency)通常不再考虑，主要考虑计算吞吐(Computing Throughput), 用CQ来表示计算吞吐：
 $CQ = \frac{num(thread)}{num(SM)} \times T_{compute}$
 抽象出来简单的倍数关系：
+
  - Fused & Vectorized: $CQ = 2N~T_{\times}$
  - Vectorized: $CQ = N~T_{\times}$
  - Fused:  $CQ = 2N~T_{\times}$
  - Based: $CQ = N~T_{\times}$
 
 **关于访存**：单个kernel执行的访存请求次数是有区别的，参考上表，fusion会将访存请求增长1/3，vectorized kernel的访存请求减少3/4，是带宽敏感的metrics：如果带宽够，这个数据将不会影响kernel的执行速度，否则这会影响性能，但减少访存请求次数总是好的。
+
  - Fused & Vectorized: $RQ_{mem} = N \times RQ_{r/w}$
  - Vectorized: $RQ_{mem} = 0.75N \times RQ_{r/w}$
  - Fused: $RQ_{mem} = 4N \times RQ_{r/w}$
@@ -111,6 +132,7 @@ $CQ = \frac{num(thread)}{num(SM)} \times T_{compute}$
 
 ### Consider All together
 Notably, the unfused approach introduces a **data dependency** between the successive kernels： 
+
  - Fused: $T_{total} = T_{kernel}$
  - Non-fused: $T_{total} = 2~T_{kernel}$
 
@@ -142,22 +164,30 @@ $N$: matrix size, $N\times N$
 $N < 1600$: 
 
 Q: 为什么Fused的优化低于1.5？
+
 A: cuda-extension存在launch开销
 
 Q: 为什么Vectorization没有优化效果？
+
 A: 内存带宽没有打满
 
 $ 1600 < N < 2200$:
 
 Q: 为什么性能有急剧提升？
+
 A: L2 Cache cover了所有的数据，$2200 \times 2200 \times 4 \times 4B \approx 72MB $
 
 $ 2200 < N < 3200$:
+
 Q: 性能坠落 & 重新爬起？
 A: TODO
 
 $N > 3200$:
+
 数据量达到了我们的分析假设的情况，所有Memory Access同时访问Global Memory，同时计算 & 启动开销忽略不计，是一个promising的结果
+
+
 Overall: 
+
 Q: 为什么在整个过程中，vectorization的效果不明显？
-A: Gemini: 因为GPU硬件会进行访存融合 $(memory~coalescing)$
+A: Gemini: 因为GPU硬件会自动进行访存融合 $(memory~coalescing)$

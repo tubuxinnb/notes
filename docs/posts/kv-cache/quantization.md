@@ -1,8 +1,0 @@
----
-date: 2025-12-16
-categories:
-  - LLM Inference
----
-# QSERVE: W4A8KV4 QUANTIZATION AND SYSTEM CO-DESIGN FOR  EFFICIENT LLM SERVING
-
-<!-- more -->
